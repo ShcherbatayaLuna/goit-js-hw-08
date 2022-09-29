@@ -6,16 +6,19 @@ const refs = {
   textarea: document.querySelector('textarea'),
 };
 
-const storageKey = {
-  message: 'feedback-form-state',
-  mail: 'mailTo',
-};
-
-insertInput();
+const STORAGE_KEY = 'feedback-form-state';
 
 refs.form.addEventListener('submit', onFormSubmit);
-refs.input.addEventListener('input', throttle(onMailInput, 500));
-refs.textarea.addEventListener('input', throttle(onTextareaInput, 500));
+refs.form.addEventListener('input', throttle(onFormInput, 500));
+
+function onFormInput() {
+  const formInput = {
+    mail: refs.input.value,
+    message: refs.textarea.value,
+  };
+
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(formInput));
+}
 
 function onFormSubmit(event) {
   event.preventDefault();
@@ -26,28 +29,21 @@ function onFormSubmit(event) {
   console.log({ email: refs.input.value, message: refs.textarea.value });
 
   event.currentTarget.reset();
-  localStorage.removeItem(storageKey.mail);
-  localStorage.removeItem(storageKey.message);
+  localStorage.removeItem(STORAGE_KEY);
 }
 
-function onMailInput(event) {
-  const email = event.target.value;
-  localStorage.setItem(storageKey.mail, email);
-}
-
-function onTextareaInput(event) {
-  const message = event.target.value;
-  localStorage.setItem(storageKey.message, message);
-}
-
-function insertInput() {
-  const savedMessage = localStorage.getItem(storageKey.message);
-  const savedMailTo = localStorage.getItem(storageKey.mail);
-
-  if (savedMessage) {
-    refs.textarea.value = savedMessage;
+const loadValue = key => {
+  try {
+    const dataForm = localStorage.getItem(key);
+    return dataForm === null ? undefined : JSON.parse(dataForm);
+  } catch (error) {
+    console.error('Get state error: ', error.message);
   }
-  if (savedMailTo) {
-    refs.input.value = savedMailTo;
-  }
+};
+
+const savedMessage = loadValue(STORAGE_KEY);
+
+if (savedMessage) {
+  refs.input.value = savedMessage.mail;
+  refs.textarea.value = savedMessage.message;
 }
